@@ -24,7 +24,30 @@ const _inlineStyles = (linkTag, originalFilePath) => {
   if(stylesheetURL.match(/^http/)) return linkTag;
   const stylesheetFilePath = _parseFilePath(originalFilePath, stylesheetURL);
   const file = readFileSync(stylesheetFilePath);
-  return `<style>${file.toString()}</style>`;
+  let css = file.toString();
+
+  while(!!css.match(/((@import ["|'|`])(.*?\.css)["|'|`];)/g)) {
+    css = _mergeContentsFromImport(css, originalFilePath) 
+  }
+  return `<style>${css}</style>`;
+}
+
+const _mergeContentsFromImport = (css, originalFilePath) => {
+  const importMatches = Array.from(css.matchAll(/((@import ["|'|`])(.*?\.css)["|'|`];)/g));
+  if(!importMatches || importMatches.length === 0 ) return css;
+  // Clear imports from css
+  css = css.replace(/((@import ["|'|`])(.*?\.css)["|'|`];)/g, '');
+
+  const styles = [];
+  importMatches.forEach(match => {
+    const fileName = match[3];
+    const cssBaseUrl = readFileSync(_parseFilePath(originalFilePath, `${fileName}`)).toString() || '';
+    styles.push(cssBaseUrl);
+  })
+
+  // push shallow file's css as last since it is this follows standard cascading logic.
+  styles.push(css)
+  return styles.join('\n');
 }
 
 const _parseFilePath = (originalFilePath, cssRelFilePath) => {
