@@ -47,7 +47,7 @@ const _mergeContentsFromImport = (css, originalFilePath) => {
   // push previously obtained css last since this follows standard cascading logic.
   styles.push(css);
 
-  _mergeContentsFromImport(styles.join('\n'), originalFilePath);
+  return _mergeContentsFromImport(styles.join('\n'), originalFilePath);
 }
 
 const _parseFilePath = (originalFilePath, cssRelFilePath) => {
